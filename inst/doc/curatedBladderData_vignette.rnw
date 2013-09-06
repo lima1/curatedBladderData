@@ -1,0 +1,234 @@
+%\VignetteKeywords{Database}
+%\VignetteDepends{curatedBladderData}
+%\VignettePackage{curatedBladderData}
+%\VignetteIndexEntry{curatedBladderData}
+
+\documentclass{article}
+
+\usepackage{rotating}
+
+<<style, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@ 
+
+\title{curatedBladderData}
+\author{Markus Riester}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+<<preliminaries,echo=FALSE,results=hide>>=
+library(sva)
+@ 
+
+\section{curatedBladderData: Clinically Annotated Data for the Bladder Cancer
+Transcriptome}
+
+This package represents a manually curated data collection for gene expression
+meta-analysis of patients with bladder cancer. This resource provides
+uniformly prepared microarray data with curated and documented clinical
+metadata.  It allows a computational user to efficiently identify studies and
+patient subgroups of interest for analysis and to run such analyses
+immediately without the challenges posed by harmonizing heterogeneous
+microarray technologies, study designs, expression data processing methods,
+and clinical data formats.  
+
+In this vignette, we give a short tour of the package and will show how to use
+it efficiently.
+
+\section{Load data sets}
+Loading a single dataset is very easy. First we load the package:
+<<example1>>=
+library(curatedBladderData)
+@
+To get a listing of all the datasets, use the \texttt{data} function:
+<<example1tcgastep2>>=
+data(package="curatedBladderData")
+@
+Now to load a single dataset, we use the \texttt{data} function again:
+<<example1>>=
+data(GSE89_eset)
+GSE89_eset
+@
+The datasets are provided as Bioconductor \texttt{ExpressionSet} objects and
+we refer to the Bioconductor documentation for users unfamiliar with this data
+structure. 
+
+\section{Load datasets based on rules}
+For a meta-analysis, we typically want to filter datasets and patients to
+get a population of patients we are interested in. We provide a short but
+powerful R script that does the filtering and provides the data as a list of
+\texttt{ExpressionSet} objects. One can use this script within R by first sourcing a config
+file which specifies the filters, like the minimum numbers of patients in each
+dataset. It is also possible to filter samples by annotation, for example to remove
+early stage and normal samples. 
+<<example2loadstep1>>=
+source(system.file("extdata", 
+"patientselection_all.config",package="curatedBladderData"))
+ls()
+@
+
+See what the values of these variables we have loaded are.  The
+variable names are fairly descriptive, but note that ``rule.1'' is a
+character vector of length 2, where the first entry is the name of a
+clinical data variable, and the second entry is a Regular Expression
+providing a requirement for that variable.  Any number of rules can be
+added, with increasing identifiers, e.g. ``rule.2'', ``rule.3'', etc.
+
+Here strict.checking is FALSE, meaning that samples not annotated for
+the variables in these rules are allowed to pass the filter.  If
+strict.checking == TRUE, samples missing this annotation will be
+removed.
+<<showls>>=
+sapply(ls(), get)
+@ 
+
+Now that we have defined the sample filter, we create a list of
+\texttt{ExpressionSets} by sourcing the \texttt{createEsetList.R} file:
+<<example2loadstep2>>=
+source(system.file("extdata", "createEsetList.R", package =
+"curatedBladderData"))
+@
+It is also possible to run the script from the command line and then load the
+R data file within R:
+\begin{verbatim}
+R --vanilla "--args patientselection.config ovarian.eset.rda tmp.log"  < createEsetList.R 
+\end{verbatim}
+Now we have \Sexpr{length(esets)} datasets with samples that passed our filter in a list of
+\texttt{ExpressionSets} called \texttt{esets}:
+<<example2loadstep3>>=
+names(esets)
+@
+
+\clearpage
+\section{Non-unique gene symbols}
+
+In the standard version of curatedBladderData (the version available on
+Bioconductor), we collapse manufacturer probesets to official HGNC symbols
+using the Biomart database. Some probesets are mapped to multiple HGNC symbols
+in this database. For these probesets, we provide all the symbols. For example 
+\texttt{220159\_at} maps to \textit{ABCA11P} and \textit{ZNF721} and we
+provide \texttt{ABCA11P///ZNF721} as probeset name. If you have an array of
+gene symbols for which you want to access the expression data, "ABCA11P" would
+not be found in curatedBladderData in this example. The following function
+will create a new ExpressionSet in which both \textit{ZNF721} and
+\textit{ABCA11P} are features with identical expression data:
+
+<<expand>>=
+expandProbesets <- function (eset, sep = "///") 
+{
+    x <- lapply(featureNames(eset), function(x) strsplit(x, sep)[[1]])
+    eset <- eset[order(sapply(x, length)), ]
+    x <- lapply(featureNames(eset), function(x) strsplit(x, sep)[[1]])
+    idx <- unlist(sapply(1:length(x), function(i) rep(i, length(x[[i]]))))
+    xx <- !duplicated(unlist(x))
+    idx <- idx[xx]
+    x <- unlist(x)[xx]
+    eset <- eset[idx, ]
+    featureNames(eset) <- x
+    eset
+}
+
+X <- GSE89_eset[head(grep("///", featureNames(GSE89_eset))),]
+exprs(X)[,1:3]
+exprs(expandProbesets(X))[,1:3]
+@
+
+\clearpage
+
+\appendix
+\section{Available Clinical Characteristics}
+
+\begin{figure}[!htb]
+\centering
+<<heatmap, echo=FALSE, fig=TRUE>>=
+.esetsStats <- function(esets) {
+    res <- lapply(varLabels(esets[[1]]), function(covar) unlist(sapply(esets, 
+        function(X) sum(!is.na(X[[covar]]))>0)))
+    names(res) <- varLabels(esets[[1]])    
+    do.call(rbind, res)
+}
+
+df.r <- .esetsStats(esets)
+M <- as.matrix(apply(df.r,c(1,2),ifelse,0,1))
+colnames(M) <- gsub("_eset$", "", colnames(M))
+# no need to show the sample ids
+M <- M[-(1:2),]
+heatmap(M[nrow(M):1,],scale="none",margins=c(8,10),Rowv=NA)
+@
+\caption{Available clinical annotation. This heatmap visualizes for
+  each curated clinical characteristic (rows) the availability in each
+  dataset (columns). Red indicates that the corresponding
+  characteristic is available for at least one sample in the dataset.
+  This plot is Figure 2 of the curatedBladderData manuscript.}
+\end{figure}
+
+\section{Summarizing the List of ExpressionSets}
+
+This example provides a table summarizing the datasets being used, and
+is useful when publishing analyses based on curatedBladderData.
+First, define some useful functions for this purpose:
+
+<<esetToTableFuns>>=
+source(system.file("extdata", "summarizeEsets.R", package =
+    "curatedBladderData"))
+@ 
+
+
+<<esettable, echo=FALSE>>=
+summary.table <- t(sapply(esets, getEsetData, possible.stages=c("superficial",
+"invasive"), possible.histological_types=c("tcc","cis", "squamous")))
+
+rownames(summary.table) <- sub("_eset", "", rownames(summary.table))
+@
+
+Optionally write this table to file, for example ( replace myfile <-
+tempfile() with something like myfile <- ``nicetable.csv'' )
+
+<<writeesettable>>=
+(myfile <- tempfile())
+write.table(summary.table, file=myfile, row.names=FALSE, quote=TRUE, sep=",")
+@ 
+
+<<xtable, echo=FALSE, results=tex>>=
+library(xtable)
+print(xtable(summary.table[, c(2, 3, 4, 5, 7)], 
+             caption="Datasets provided by curatedBladderData.",
+             table.placement="p", caption.placement="bottom"),
+      floating.environment='sidewaystable')
+@ 
+
+\section{For non-R users}
+
+If you are not doing your analysis in R, and just want to get some
+data you have identified from the curatedBladderData manual, here is
+a simple way to do it.  For one dataset:
+
+<<simplygetdata, eval=FALSE>>=
+library(curatedBladderData)
+library(affy)
+data(GSE89_eset)
+write.csv(exprs(GSE89_eset), file="GSE89_eset_exprs.csv")
+write.csv(pData(GSE89_eset), file="GSE89_eset_clindata.csv")
+@ 
+
+Or for several datasets:
+
+<<simplyseveraldatasets, eval=FALSE>>=
+data.to.fetch <- c("GSE89_eset", "GSE37317_eset")
+for (onedata in data.to.fetch){
+    print(paste("Fetching", onedata))
+    data(list=onedata)
+    write.csv(exprs(get(onedata)), file=paste(onedata, "_exprs.csv", sep=""))
+    write.csv(pData(get(onedata)), file=paste(onedata, "_clindata.csv", sep=""))
+}
+@ 
+
+\section{Session Info}
+<<sessioninfo, echo=FALSE, results=tex>>=
+toLatex(sessionInfo())
+@
+
+\end{document}

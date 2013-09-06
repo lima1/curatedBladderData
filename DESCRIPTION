@@ -1,0 +1,12 @@
+Package: curatedBladderData
+Type: Package
+Title: Bladder Cancer Gene Expression Analysis
+Version: 0.99.0
+Date: 2013-09-02
+Author: Markus Riester
+Maintainer: Markus Riester <markus@jimmy.harvard.edu>
+Description: The curatedBladderData package provides relevant functions and data for gene expression analysis in patients with bladder cancer.
+Depends: R (>= 2.10.0), affy
+Suggests: BiocStyle, survival, xtable, sva, genefilter, logging
+License: Artistic-2.0
+biocViews: ExperimentData, Cancer, Bladder, RNAExpressionData
