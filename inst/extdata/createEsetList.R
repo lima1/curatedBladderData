@@ -25,7 +25,7 @@ basicConfig()
 addHandler(writeToFile, logger="", file=kLogFile)
 
 loginfo("Inside script createEsetList.R - inputArgs =")
-loginfo(inputArgs)
+if (length(inputArgs)) loginfo(inputArgs)
 
 if (!exists("package.name")) package.name <- "curatedOvarianData"
 
