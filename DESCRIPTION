@@ -1,13 +1,34 @@
 Package: curatedBladderData
 Type: Package
 Title: Bladder Cancer Gene Expression Analysis
-Version: 1.19.2
-Date: 2019-03-28
+Version: 1.49.1
+Date: 2026-10-06
 Author: Markus Riester
 Maintainer: Markus Riester <markus@jimmy.harvard.edu>
-Description: The curatedBladderData package provides relevant functions and data for gene expression analysis in patients with bladder cancer.
-Depends: R (>= 2.10.0), affy
-Suggests: BiocStyle, survival, xtable, sva, genefilter, logging
+Description: Manually curated bladder cancer ExpressionSet objects from 10
+    studies (12 objects, since two studies contributed data on two platforms
+    each), with uniformly processed expression data and curated clinical
+    metadata. Datasets are hosted on Zenodo and downloaded on first use,
+    then cached locally with BiocFileCache. Includes a configurable script
+    for rule-based creation of filtered dataset lists for meta-analysis.
+Depends:
+    R (>= 4.0.0),
+    Biobase
+Imports:
+    BiocFileCache,
+    tools,
+    utils
+Suggests:
+    BiocStyle,
+    genefilter,
+    logging,
+    survival,
+    sva,
+    testthat (>= 3.0.0),
+    xtable
 License: Artistic-2.0
 URL: https://github.com/lima1/curatedBladderData
-biocViews: ExperimentData, CancerData, OvarianCancerData, MicroarrayData, ExpressionData
+BugReports: https://github.com/lima1/curatedBladderData/issues
+biocViews: ExperimentData, CancerData, MicroarrayData, ExpressionData, GEO
+BuildResaveData: no
+Config/testthat/edition: 3
