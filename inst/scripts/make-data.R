@@ -2,7 +2,7 @@
 ## download manifest, the data/ stub files, and data/datalist.
 ##
 ## The datasets themselves were produced by the curatedBladderData curation
-## pipeline (see the package vignette and inst/extdata/the curation template);
+## pipeline (see the package vignette);
 ## this script re-serializes the .rda files that shipped inside the package
 ## through version 1.49.x (git tag: pre-zenodo-refactor) with xz compression
 ## for hosting on Zenodo.

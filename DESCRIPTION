@@ -5,8 +5,9 @@ Version: 1.49.1
 Date: 2026-10-06
 Author: Markus Riester
 Maintainer: Markus Riester <markus@jimmy.harvard.edu>
-Description: Manually curated bladder cancer ExpressionSet objects from 12
-    studies, with uniformly processed expression data and curated clinical
+Description: Manually curated bladder cancer ExpressionSet objects from 10
+    studies (12 objects, since two studies contributed data on two platforms
+    each), with uniformly processed expression data and curated clinical
     metadata. Datasets are hosted on Zenodo and downloaded on first use,
     then cached locally with BiocFileCache. Includes a configurable script
     for rule-based creation of filtered dataset lists for meta-analysis.
