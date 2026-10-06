@@ -38,18 +38,38 @@ and clinical data formats.
 In this vignette, we give a short tour of the package and will show how to use
 it efficiently.
 
+\section{Data access and caching}
+
+As of version 1.49.1 the datasets are no longer stored inside the package.
+They are hosted on Zenodo and downloaded individually the first time they
+are requested, then cached locally with \Biocpkg{BiocFileCache}, so later
+uses need no network access.  The cache lives in a package-specific
+directory, \texttt{tools::R\_user\_dir("curatedBladderData", "cache")}; to
+reclaim disk space, delete that directory.
+
+The legacy \texttt{data(GSE89\_eset)} syntax still works, downloading
+through the same cache, but is deprecated in favour of the
+\texttt{curatedBladderData()} function shown below.
+
+Throughout this vignette we pass \texttt{test = TRUE} (and set
+\texttt{test.mode <- TRUE}), which loads small offline subsets bundled with
+the package so that the vignette builds without downloading data.  For real
+analyses, omit these settings.
+
 \section{Load data sets}
 Loading a single dataset is very easy. First we load the package:
 <<example1>>=
 library(curatedBladderData)
 @
-To get a listing of all the datasets, use the \texttt{data} function:
+To get a listing of all the datasets, call \texttt{curatedBladderData()}
+with no arguments:
 <<example1tcgastep2>>=
-data(package="curatedBladderData")
+curatedBladderData()
 @
-Now to load a single dataset, we use the \texttt{data} function again:
-<<example1>>=
-data(GSE89_eset)
+Now to load a single dataset (drop \texttt{test = TRUE} to download the
+full dataset):
+<<example1load>>=
+GSE89_eset <- curatedBladderData("GSE89_eset", test = TRUE)
 GSE89_eset
 @
 The datasets are provided as Bioconductor \texttt{ExpressionSet} objects and
@@ -67,6 +87,7 @@ early stage and normal samples.
 <<example2loadstep1>>=
 source(system.file("extdata", 
 "patientselection_all.config",package="curatedBladderData"))
+test.mode <- TRUE  # use the bundled offline subsets in this vignette
 ls()
 @
 
@@ -208,8 +229,7 @@ a simple way to do it.  For one dataset:
 
 <<simplygetdata, eval=FALSE>>=
 library(curatedBladderData)
-library(affy)
-data(GSE89_eset)
+GSE89_eset <- curatedBladderData("GSE89_eset")
 write.csv(exprs(GSE89_eset), file="GSE89_eset_exprs.csv")
 write.csv(pData(GSE89_eset), file="GSE89_eset_clindata.csv")
 @ 
@@ -220,7 +240,7 @@ Or for several datasets:
 data.to.fetch <- c("GSE89_eset", "GSE37317_eset")
 for (onedata in data.to.fetch){
     print(paste("Fetching", onedata))
-    data(list=onedata)
+    assign(onedata, curatedBladderData(onedata))
     write.csv(exprs(get(onedata)), file=paste(onedata, "_exprs.csv", sep=""))
     write.csv(pData(get(onedata)), file=paste(onedata, "_clindata.csv", sep=""))
 }
